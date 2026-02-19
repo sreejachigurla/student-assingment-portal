@@ -200,11 +200,29 @@ async function loadStudents(){
 
     let html = `
         <h2>Manage Students</h2>
+
+        <div style="background: rgba(255,255,255,0.03); padding: 16px; border-radius: 8px; margin-bottom: 18px;">
+            <h3 style="margin: 0 0 8px 0;">➕ Add Student</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                <input id="newStudentName" placeholder="Full name">
+                <input id="newStudentEmail" placeholder="Email">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: center;">
+                <input id="newStudentDept" placeholder="Department">
+                <input id="newStudentPassword" placeholder="Password" type="password">
+            </div>
+            <div style="margin-top: 10px; text-align: right;">
+                <button class="btn btn-primary" onclick="createStudent()">Add Student</button>
+            </div>
+            <div id="addStudentMsg" style="margin-top:8px"></div>
+        </div>
+
         <input class="search-box" placeholder="Search by email..." onkeyup="filterTable(this)">
         <table>
         <tr>
             <th>Name</th>
             <th>Email</th>
+            <th>Department</th>
             <th>Action</th>
         </tr>
     `;
@@ -214,6 +232,7 @@ async function loadStudents(){
             <tr>
                 <td>${s.name}</td>
                 <td>${s.email}</td>
+                <td>${s.department || ''}</td>
                 <td>
                     <button class="delete-btn" onclick="deleteStudent('${s._id}')">Delete</button>
                 </td>
@@ -225,6 +244,51 @@ async function loadStudents(){
     document.getElementById("content").innerHTML = html;
 }
 
+/* Create Student (from Admin) */
+async function createStudent(){
+    const name = document.getElementById('newStudentName').value.trim();
+    const email = document.getElementById('newStudentEmail').value.trim();
+    const department = document.getElementById('newStudentDept').value.trim();
+    const password = document.getElementById('newStudentPassword').value;
+    const msgDiv = document.getElementById('addStudentMsg');
+
+    msgDiv.textContent = '';
+
+    if(!name || !email || !department || !password){
+        msgDiv.style.color = '#ff6b6b';
+        msgDiv.textContent = 'Please fill all fields';
+        return;
+    }
+
+    try{
+        const res = await fetch('http://localhost:5000/admin/add-student', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, department, password })
+        });
+
+        const data = await res.json();
+        if(res.ok){
+            msgDiv.style.color = '#4caf50';
+            msgDiv.textContent = 'Student added successfully';
+            // Clear inputs
+            document.getElementById('newStudentName').value = '';
+            document.getElementById('newStudentEmail').value = '';
+            document.getElementById('newStudentDept').value = '';
+            document.getElementById('newStudentPassword').value = '';
+            // Refresh list
+            setTimeout(loadStudents, 800);
+        } else {
+            msgDiv.style.color = '#ff6b6b';
+            msgDiv.textContent = data.message || 'Error adding student';
+        }
+    } catch(err){
+        console.error('Add student error:', err);
+        msgDiv.style.color = '#ff6b6b';
+        msgDiv.textContent = 'Error adding student';
+    }
+}
+
 /* Load Faculty */
 async function loadFaculty(){
     const res = await fetch("http://localhost:5000/admin/faculty");
@@ -232,6 +296,23 @@ async function loadFaculty(){
 
     let html = `
         <h2>Manage Faculty</h2>
+
+        <div style="background: rgba(255,255,255,0.03); padding: 16px; border-radius: 8px; margin-bottom: 18px;">
+            <h3 style="margin: 0 0 8px 0;">➕ Add Faculty</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                <input id="newFacultyName" placeholder="Full name">
+                <input id="newFacultyEmail" placeholder="Email">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: center;">
+                <input id="newFacultyDept" placeholder="Department">
+                <input id="newFacultyPassword" placeholder="Password" type="password">
+            </div>
+            <div style="margin-top: 10px; text-align: right;">
+                <button class="btn btn-primary" onclick="createFaculty()">Add Faculty</button>
+            </div>
+            <div id="addFacultyMsg" style="margin-top:8px"></div>
+        </div>
+
         <table>
         <tr>
             <th>Name</th>
@@ -246,7 +327,7 @@ async function loadFaculty(){
             <tr>
                 <td>${f.name}</td>
                 <td>${f.email}</td>
-                <td>${f.department}</td>
+                <td>${f.department || ''}</td>
                 <td>
                     <button class="delete-btn" onclick="deleteFaculty('${f._id}')">Delete</button>
                 </td>
@@ -256,6 +337,51 @@ async function loadFaculty(){
 
     html += "</table>";
     document.getElementById("content").innerHTML = html;
+}
+
+/* Create Faculty (from Admin) */
+async function createFaculty(){
+    const name = document.getElementById('newFacultyName').value.trim();
+    const email = document.getElementById('newFacultyEmail').value.trim();
+    const department = document.getElementById('newFacultyDept').value.trim();
+    const password = document.getElementById('newFacultyPassword').value;
+    const msgDiv = document.getElementById('addFacultyMsg');
+
+    msgDiv.textContent = '';
+
+    if(!name || !email || !department || !password){
+        msgDiv.style.color = '#ff6b6b';
+        msgDiv.textContent = 'Please fill all fields';
+        return;
+    }
+
+    try{
+        const res = await fetch('http://localhost:5000/admin/add-faculty', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, department, password })
+        });
+
+        const data = await res.json();
+        if(res.ok){
+            msgDiv.style.color = '#4caf50';
+            msgDiv.textContent = 'Faculty added successfully';
+            // Clear inputs
+            document.getElementById('newFacultyName').value = '';
+            document.getElementById('newFacultyEmail').value = '';
+            document.getElementById('newFacultyDept').value = '';
+            document.getElementById('newFacultyPassword').value = '';
+            // Refresh list
+            setTimeout(loadFaculty, 800);
+        } else {
+            msgDiv.style.color = '#ff6b6b';
+            msgDiv.textContent = data.message || 'Error adding faculty';
+        }
+    } catch(err){
+        console.error('Add faculty error:', err);
+        msgDiv.style.color = '#ff6b6b';
+        msgDiv.textContent = 'Error adding faculty';
+    }
 }
 
 async function deleteStudent(id){
