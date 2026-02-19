@@ -8,6 +8,8 @@ const bcrypt = require("bcryptjs");
 const cors = require("cors");
 const path = require("path");
 const nodemailer = require("nodemailer");
+const multer = require("multer");
+const fs = require("fs");
 
 const app = express();
 const PORT = 5000;
@@ -18,6 +20,45 @@ const PORT = 5000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
+
+// ====================
+// File Upload Configuration
+// ====================
+const uploadsDir = path.join(__dirname, "../uploads");
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, uploadsDir);
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
+    fileFilter: (req, file, cb) => {
+        const allowedMimes = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'text/plain',
+            'application/zip',
+            'image/jpeg',
+            'image/png'
+        ];
+        if (allowedMimes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Invalid file type. Only PDF, DOC, DOCX, TXT, ZIP, JPG, PNG are allowed.'));
+        }
+    }
+});
 
 // ====================
 // Email Configuration (Using Gmail - enable "Less secure app access")
@@ -76,7 +117,13 @@ const submissionSchema = new mongoose.Schema({
     studentId: { type: mongoose.Schema.Types.ObjectId, ref: "Student", required: true },
     assignmentId: { type: mongoose.Schema.Types.ObjectId, ref: "Assignment", required: true },
     submissionDate: { type: Date, default: Date.now },
-    content: { type: String, required: true },
+    content: { type: String },
+    file: {
+        fileName: { type: String },
+        filePath: { type: String },
+        fileSize: { type: Number },
+        mimeType: { type: String }
+    },
     status: { type: String, default: "submitted" }
 });
 
@@ -205,17 +252,32 @@ app.get("/faculty/submissions/:assignmentId", async (req, res) => {
 });
 
 // ---- Student: Submit Assignment ----
-app.post("/student/submit-assignment", async (req, res) => {
+app.post("/student/submit-assignment", upload.single("file"), async (req, res) => {
     try {
         const { studentId, assignmentId, content } = req.body;
 
         if (!studentId || !assignmentId) {
+            if (req.file) {
+                fs.unlinkSync(req.file.path); // Delete file if validation fails
+            }
             return res.status(400).json({ message: "Student ID and Assignment ID are required" });
         }
 
         const assignmentExists = await Assignment.findById(assignmentId);
         if (!assignmentExists) {
+            if (req.file) {
+                fs.unlinkSync(req.file.path);
+            }
             return res.status(404).json({ message: "Assignment not found" });
+        }
+
+        // Check if student already submitted this assignment
+        const existingSubmission = await Submission.findOne({ studentId, assignmentId });
+        if (existingSubmission) {
+            if (req.file) {
+                fs.unlinkSync(req.file.path);
+            }
+            return res.status(400).json({ message: "You have already submitted this assignment. Only one submission per assignment allowed." });
         }
 
         const submission = new Submission({
@@ -224,12 +286,25 @@ app.post("/student/submit-assignment", async (req, res) => {
             content: content || "File submission"
         });
 
+        // If file is uploaded, store file information
+        if (req.file) {
+            submission.file = {
+                fileName: req.file.originalname,
+                filePath: req.file.path,
+                fileSize: req.file.size,
+                mimeType: req.file.mimetype
+            };
+        }
+
         await submission.save();
-        res.status(201).json({ message: "Assignment submitted successfully", submissionId: submission._id });
+        res.status(201).json({ message: "✅ Assignment submitted successfully", submissionId: submission._id });
 
     } catch (error) {
+        if (req.file) {
+            fs.unlinkSync(req.file.path); // Delete file if error occurs
+        }
         console.log("SUBMIT ASSIGNMENT ERROR:", error);
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: error.message || "Error submitting assignment" });
     }
 });
 
@@ -245,6 +320,28 @@ app.get("/student/submissions/:studentId", async (req, res) => {
         res.status(200).json(submissions);
     } catch (error) {
         console.log("GET STUDENT SUBMISSIONS ERROR:", error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// ---- Download Submission File ----
+app.get("/student/download/:submissionId", async (req, res) => {
+    try {
+        const { submissionId } = req.params;
+
+        const submission = await Submission.findById(submissionId);
+        if (!submission || !submission.file) {
+            return res.status(404).json({ message: "File not found" });
+        }
+
+        const filePath = submission.file.filePath;
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ message: "File does not exist" });
+        }
+
+        res.download(filePath, submission.file.fileName);
+    } catch (error) {
+        console.log("DOWNLOAD FILE ERROR:", error);
         res.status(500).json({ message: error.message });
     }
 });
@@ -563,7 +660,20 @@ app.post("/admin/create-quiz", async (req, res) => {
     const { title, description, questions, timeLimit, createdBy } = req.body;
 
     if (!title || !questions || questions.length === 0) {
-      return res.status(400).json({ message: "Title and questions required" });
+      return res.status(400).json({ success: false, message: "Title and questions required" });
+    }
+
+    // Validate questions
+    for (let q of questions) {
+      if (!q.question || !q.options || q.options.length < 2) {
+        return res.status(400).json({ success: false, message: "Each question must have text and at least 2 options" });
+      }
+      if (q.correctAnswer === null || q.correctAnswer === undefined) {
+        return res.status(400).json({ success: false, message: "Each question must have a correct answer selected" });
+      }
+      if (!q.points || q.points <= 0) {
+        return res.status(400).json({ success: false, message: "Each question must have points > 0" });
+      }
     }
 
     let totalPoints = 0;
@@ -581,22 +691,22 @@ app.post("/admin/create-quiz", async (req, res) => {
     });
 
     await newQuiz.save();
-    res.status(201).json({ message: "Quiz created successfully", quiz: newQuiz });
+    res.status(201).json({ success: true, message: "Quiz created successfully", quiz: newQuiz });
 
   } catch (error) {
     console.log("CREATE QUIZ ERROR:", error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
 // Get All Quizzes
 app.get("/quizzes", async (req, res) => {
   try {
-    const quizzes = await Quiz.find().select("-questions");
-    res.status(200).json(quizzes);
+    const quizzes = await Quiz.find();
+    res.status(200).json({ success: true, quizzes: quizzes });
   } catch (error) {
     console.log("GET QUIZZES ERROR:", error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
@@ -605,27 +715,33 @@ app.get("/quiz/:quizId", async (req, res) => {
   try {
     const quiz = await Quiz.findById(req.params.quizId);
     if (!quiz) {
-      return res.status(404).json({ message: "Quiz not found" });
+      return res.status(404).json({ success: false, message: "Quiz not found" });
     }
-    res.status(200).json(quiz);
+    res.status(200).json({ success: true, quiz: quiz });
   } catch (error) {
     console.log("GET QUIZ ERROR:", error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
 // Student: Submit Quiz Answers
 app.post("/student/submit-quiz", async (req, res) => {
   try {
-    const { studentId, quizId, answers } = req.body;
+    const { studentEmail, quizId, answers } = req.body;
 
-    if (!studentId || !quizId || !answers) {
-      return res.status(400).json({ message: "Missing required fields" });
+    if (!studentEmail || !quizId || !answers) {
+      return res.status(400).json({ success: false, message: "Missing required fields" });
+    }
+
+    // Find student by email
+    const student = await Student.findOne({ email: studentEmail });
+    if (!student) {
+      return res.status(404).json({ success: false, message: "Student not found" });
     }
 
     const quiz = await Quiz.findById(quizId);
     if (!quiz) {
-      return res.status(404).json({ message: "Quiz not found" });
+      return res.status(404).json({ success: false, message: "Quiz not found" });
     }
 
     let totalScore = 0;
@@ -646,27 +762,31 @@ app.post("/student/submit-quiz", async (req, res) => {
     const percentage = (totalScore / quiz.totalPoints * 100).toFixed(2);
 
     const quizAttempt = new QuizAttempt({
-      studentId,
+      studentId: student._id,
       quizId,
       answers: evaluatedAnswers,
       totalScore,
       percentage,
-      endTime: new Date()
+      submissionTime: new Date()
     });
 
     await quizAttempt.save();
 
     res.status(201).json({
+      success: true,
       message: "Quiz submitted successfully",
-      score: totalScore,
-      totalPoints: quiz.totalPoints,
-      percentage: percentage,
-      attemptId: quizAttempt._id
+      attempt: {
+        totalScore,
+        totalPoints: quiz.totalPoints,
+        percentage: percentage,
+        answers: evaluatedAnswers,
+        submissionTime: quizAttempt.submissionTime
+      }
     });
 
   } catch (error) {
     console.log("SUBMIT QUIZ ERROR:", error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
@@ -678,11 +798,27 @@ app.get("/student/quiz-attempts/:studentId", async (req, res) => {
     const attempts = await QuizAttempt.find({ studentId })
       .populate("quizId", "title totalPoints timeLimit");
 
-    res.status(200).json(attempts);
+    res.status(200).json({ success: true, attempts: attempts });
 
   } catch (error) {
     console.log("GET QUIZ ATTEMPTS ERROR:", error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Get All Quiz Attempts (for Faculty/Admin)
+app.get("/admin/all-quiz-attempts", async (req, res) => {
+  try {
+    const attempts = await QuizAttempt.find()
+      .populate("studentId", "name email department")
+      .populate("quizId", "title totalPoints")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ success: true, attempts: attempts });
+
+  } catch (error) {
+    console.log("GET ALL QUIZ ATTEMPTS ERROR:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
@@ -693,7 +829,7 @@ app.get("/admin/quiz-analytics/:quizId", async (req, res) => {
 
     const quiz = await Quiz.findById(quizId);
     if (!quiz) {
-      return res.status(404).json({ message: "Quiz not found" });
+      return res.status(404).json({ success: false, message: "Quiz not found" });
     }
 
     const attempts = await QuizAttempt.find({ quizId })
@@ -709,6 +845,7 @@ app.get("/admin/quiz-analytics/:quizId", async (req, res) => {
     const minScore = attempts.length > 0 ? Math.min(...scores) : 0;
 
     res.status(200).json({
+      success: true,
       quizTitle: quiz.title,
       totalStudents,
       attemptedStudents,
@@ -723,7 +860,7 @@ app.get("/admin/quiz-analytics/:quizId", async (req, res) => {
 
   } catch (error) {
     console.log("QUIZ ANALYTICS ERROR:", error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 

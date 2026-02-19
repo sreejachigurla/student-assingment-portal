@@ -196,7 +196,7 @@ body.dark {
     font-weight: 600;
 }
 
-.form-group input,
+cd .\backend\.form-group input,
 .form-group textarea,
 .form-group select {
     width: 100%;
@@ -399,7 +399,7 @@ body.dark {
         <button class="nav-btn active" onclick="showTab('assignments')">📚 Assignments</button>
         <button class="nav-btn" onclick="showTab('submissions')">📤 My Submissions</button>
         <button class="nav-btn" onclick="showTab('submit')">✏️ Submit Assignment</button>
-        <button class="nav-btn" onclick="showTab('quizzes')">🧪 Quizzes</button>
+        <button class="nav-btn" id="quizzes-tab" onclick="showTab('quizzes'); loadQuizzes();">🧪 Quizzes</button>
     </div>
 
     <!-- Tab Content -->
@@ -665,12 +665,21 @@ async function loadMySubmissions() {
 
         if (Array.isArray(data) && data.length > 0) {
             data.forEach(sub => {
+                let fileInfo = '';
+                if (sub.file && sub.file.fileName) {
+                    const fileSizeKB = (sub.file.fileSize / 1024).toFixed(2);
+                    fileInfo = `<p><strong>📎 File Submitted:</strong> ${sub.file.fileName} (${fileSizeKB} KB)
+                        <a href="http://localhost:5000/student/download/${sub._id}" style="margin-left: 10px; color: #2ecc71; text-decoration: underline; cursor: pointer;">⬇️ Download</a>
+                    </p>`;
+                }
+
                 container.innerHTML += `
                     <div class="submission-item">
                         <p><strong>📋 Assignment:</strong> ${sub.assignmentId?.title || 'Unknown'}</p>
-                        <p><strong>📤 Status:</strong> ${sub.status}</p>
-                        <p><strong>📅 Submitted:</strong> ${new Date(sub.submissionDate).toLocaleDateString()}</p>
-                        <p><strong>💬 Content:</strong> ${sub.content}</p>
+                        <p><strong>📤 Status:</strong> <span style="color: #2ecc71;">${sub.status}</span></p>
+                        <p><strong>📅 Submitted:</strong> ${new Date(sub.submissionDate).toLocaleDateString()} at ${new Date(sub.submissionDate).toLocaleTimeString()}</p>
+                        ${fileInfo}
+                        ${sub.content ? `<p><strong>💬 Comments:</strong> ${sub.content}</p>` : ''}
                     </div>
                 `;
             });
@@ -704,49 +713,90 @@ function toggleTheme() {
 document.getElementById('quizzes-tab')?.addEventListener('click', loadQuizzes);
 
 function loadQuizzes() {
-    fetch('http://localhost:5000/quizzes')
-        .then(res => res.json())
-        .then(data => {
-            if (data.success && data.quizzes.length > 0) {
-                let html = '<h2>🧪 Available Quizzes</h2><div class="quizzes-container">';
-                data.quizzes.forEach(quiz => {
-                    const date = new Date(quiz.createdAt).toLocaleDateString();
-                    html += `
-                        <div class="quiz-card">
-                            <div class="quiz-header">
-                                <h3>${quiz.title}</h3>
-                                <span class="quiz-points">${quiz.totalPoints} pts</span>
-                            </div>
-                            <p class="quiz-desc">${quiz.description}</p>
-                            <div class="quiz-meta">
-                                <span>📋 ${quiz.questions.length} questions</span>
-                                <span>⏱️ ${quiz.timeLimit} min</span>
-                                <span>📅 ${date}</span>
-                            </div>
-                            <button class="btn btn-primary" onclick="startQuiz('${quiz._id}')">Start Quiz →</button>
+    // Fetch both quizzes and student's quiz attempts
+    Promise.all([
+        fetch('http://localhost:5000/quizzes').then(res => res.json()),
+        fetch(`http://localhost:5000/student/quiz-attempts/${student.id}`).then(res => res.json()).catch(() => ({ attempts: [] }))
+    ])
+    .then(([quizzesData, attemptsData]) => {
+        if (!quizzesData) {
+            throw new Error('No response data received');
+        }
+        
+        const quizzes = quizzesData.quizzes || [];
+        const attempts = attemptsData.attempts || [];
+        
+        console.log('Quizzes:', quizzes);
+        console.log('Attempts:', attempts);
+        
+        // Create a map of quiz attempts by quizId (convert to string for comparison)
+        const attemptMap = {};
+        attempts.forEach(a => {
+            const quizIdStr = a.quizId?._id ? a.quizId._id.toString() : a.quizId.toString();
+            attemptMap[quizIdStr] = a;
+        });
+        
+        if (quizzes && Array.isArray(quizzes) && quizzes.length > 0) {
+            let html = '<h2>🧪 Available Quizzes</h2><div class="quizzes-container">';
+            quizzes.forEach(quiz => {
+                const date = new Date(quiz.createdAt).toLocaleDateString();
+                const quizIdStr = quiz._id.toString();
+                const attempt = attemptMap[quizIdStr];
+                
+                html += `
+                    <div class="quiz-card">
+                        <div class="quiz-header">
+                            <h3>${quiz.title}</h3>
+                            <span class="quiz-points">${quiz.totalPoints} pts</span>
                         </div>
-                    `;
-                });
-                html += '</div>';
-                document.getElementById('quizzesContent').innerHTML = html;
-            } else {
-                document.getElementById('quizzesContent').innerHTML = '<p class="info-msg">No quizzes available yet.</p>';
-            }
-        })
-        .catch(err => console.error('Error loading quizzes:', err));
+                        <p class="quiz-desc">${quiz.description}</p>
+                        <div class="quiz-meta">
+                            <span>📋 ${(quiz.questions && quiz.questions.length) || 0} questions</span>
+                            <span>⏱️ ${quiz.timeLimit} min</span>
+                            <span>📅 ${date}</span>
+                        </div>
+                        ${attempt ? `
+                            <div style="background: #e8f5e9; padding: 10px; border-radius: 6px; margin: 10px 0; text-align: center;">
+                                <p style="margin: 0; color: #2e7d32; font-weight: bold;">✅ Quiz Completed</p>
+                                <p style="margin: 5px 0; color: #558b2f; font-size: 14px;">Score: ${attempt.totalScore}/${quiz.totalPoints} (${Math.round(attempt.percentage)}%)</p>
+                            </div>
+                        ` : `
+                            <button class="btn btn-primary" onclick="startQuiz('${quiz._id}')">Start Quiz →</button>
+                        `}
+                    </div>
+                `;
+            });
+            html += '</div>';
+            document.getElementById('quizzesContent').innerHTML = html;
+        } else {
+            document.getElementById('quizzesContent').innerHTML = '<p class="info-msg">No quizzes available yet.</p>';
+        }
+    })
+    .catch(err => {
+        console.error('Error loading quizzes:', err);
+        document.getElementById('quizzesContent').innerHTML = '<p class="info-msg" style="color: #ff6b6b;">❌ Error loading quizzes: ' + err.message + '</p>';
+    });
 }
 
 function startQuiz(quizId) {
     fetch(`http://localhost:5000/quiz/${quizId}`)
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+            }
+            return res.json();
+        })
         .then(data => {
             if (data.success) {
                 displayQuiz(data.quiz);
             } else {
-                alert('Error loading quiz');
+                alert('Error: ' + (data.message || 'Failed to load quiz'));
             }
         })
-        .catch(err => console.error('Error:', err));
+        .catch(err => {
+            console.error('Error:', err);
+            alert('Error loading quiz: ' + err.message);
+        });
 }
 
 let currentQuiz = null;
@@ -832,7 +882,7 @@ function submitQuiz(autoSubmit = false) {
     if (!currentQuiz) return;
     if (quizTimer) clearInterval(quizTimer);
 
-    const studentEmail = localStorage.getItem('email');
+    const studentEmail = student.email;
     if (!studentEmail) {
         alert('Please login first');
         return;
@@ -856,7 +906,12 @@ function submitQuiz(autoSubmit = false) {
             answers: answers
         })
     })
-    .then(res => res.json())
+    .then(res => {
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        return res.json();
+    })
     .then(data => {
         if (data.success) {
             showQuizResults(data);
@@ -866,7 +921,7 @@ function submitQuiz(autoSubmit = false) {
     })
     .catch(err => {
         console.error('Error:', err);
-        alert('Error submitting quiz');
+        alert('Error submitting quiz: ' + err.message);
     });
 }
 
@@ -889,7 +944,7 @@ function showQuizResults(result) {
                 <div class="score-details">
                     <h3>${status}</h3>
                     <p>Score: <strong>${attempt.totalScore} / ${currentQuiz.totalPoints}</strong></p>
-                    <p>Submission Time: ${new Date(attempt.submissionTime).toLocaleString()}</p>
+                    <p>Submission Time: ${new Date(attempt.createdAt || attempt.endTime).toLocaleString()}</p>
                 </div>
             </div>
 

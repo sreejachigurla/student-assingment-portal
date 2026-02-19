@@ -340,6 +340,7 @@ tr:hover {
         <button class="nav-btn" onclick="showTab('create')">Create Assignment</button>
         <button class="nav-btn" onclick="showTab('assignments')">View Assignments</button>
         <button class="nav-btn" onclick="showTab('analytics')">Analytics</button>
+        <button class="nav-btn" onclick="showTab('quizAttempts')">📊 Quiz Attempts</button>
         <button class="nav-btn" onclick="showTab('reminders')">Send Reminders</button>
         <button class="logout-btn" onclick="logout()" style="margin-top: 30px;">Logout</button>
     </div>
@@ -424,6 +425,14 @@ tr:hover {
             </div>
         </div>
 
+        <!-- 6. QUIZ ATTEMPTS TAB -->
+        <div id="quizAttempts" class="tab-content">
+            <div class="card">
+                <h3>📊 Student Quiz Attempts</h3>
+                <div id="quizAttemptsContent" style="margin-top: 20px;"></div>
+            </div>
+        </div>
+
     </div>
 
 </div>
@@ -452,6 +461,7 @@ function showTab(tabName) {
     if (tabName === 'dashboard') loadDashboard();
     else if (tabName === 'assignments') loadAssignments();
     else if (tabName === 'analytics') populateAnalyticsSelect();
+    else if (tabName === 'quizAttempts') loadQuizAttempts();
 }
 
 // ===== LOAD DASHBOARD =====
@@ -723,6 +733,65 @@ async function sendReminders() {
         const msgDiv = document.getElementById('remindersMsg');
         msgDiv.className = 'message error';
         msgDiv.innerText = '❌ Error sending reminders';
+    }
+}
+
+// ===== LOAD QUIZ ATTEMPTS =====
+async function loadQuizAttempts() {
+    try {
+        const res = await fetch("http://localhost:5000/admin/all-quiz-attempts");
+        const data = await res.json();
+        
+        const attempts = data.attempts || [];
+        const container = document.getElementById('quizAttemptsContent');
+        
+        if (attempts.length === 0) {
+            container.innerHTML = '<p style="text-align: center; opacity: 0.7;">No quiz attempts yet</p>';
+            return;
+        }
+        
+        let html = `
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                    <tr style="background: rgba(102, 126, 234, 0.3); border-bottom: 2px solid #667eea;">
+                        <th style="padding: 12px;">Student Name</th>
+                        <th style="padding: 12px;">Email</th>
+                        <th style="padding: 12px;">Quiz Title</th>
+                        <th style="padding: 12px;">Score</th>
+                        <th style="padding: 12px;">Percentage</th>
+                        <th style="padding: 12px;">Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        attempts.forEach(attempt => {
+            const quizTitle = attempt.quizId?.title || 'N/A';
+            const studentName = attempt.studentId?.name || 'Unknown';
+            const studentEmail = attempt.studentId?.email || 'N/A';
+            const date = new Date(attempt.createdAt).toLocaleDateString();
+            const percentage = Math.round(attempt.percentage || 0);
+            
+            const statusColor = percentage >= 50 ? '#4caf50' : '#f44336';
+            
+            html += `
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); hover: background rgba(255,255,255,0.05);">
+                    <td style="padding: 12px;">${studentName}</td>
+                    <td style="padding: 12px;">${studentEmail}</td>
+                    <td style="padding: 12px;">${quizTitle}</td>
+                    <td style="padding: 12px;">${attempt.totalScore}</td>
+                    <td style="padding: 12px; color: ${statusColor}; font-weight: bold;">${percentage}%</td>
+                    <td style="padding: 12px;">${date}</td>
+                </tr>
+            `;
+        });
+        
+        html += '</tbody></table>';
+        container.innerHTML = html;
+        
+    } catch (error) {
+        console.error('Error loading quiz attempts:', error);
+        document.getElementById('quizAttemptsContent').innerHTML = '<p style="color: #ff6b6b;">Error loading quiz attempts: ' + error.message + '</p>';
     }
 }
 

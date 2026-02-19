@@ -150,6 +150,7 @@ tr:hover {
         <button onclick="loadStudents()">Manage Students</button>
         <button onclick="loadFaculty()">Manage Faculty</button>
         <button onclick="loadCreateQuiz()">🧪 Create Quiz</button>
+        <button onclick="loadQuizAttempts()">📊 Quiz Attempts</button>
         <button onclick="logout()">Logout</button>
     </div>
 
@@ -588,6 +589,10 @@ async function createQuiz() {
             })
         });
 
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+
         const data = await res.json();
 
         if (data.success) {
@@ -604,6 +609,54 @@ async function createQuiz() {
         msgDiv.className = 'error';
         msgDiv.textContent = '❌ Error: ' + error.message;
     }
+}
+
+/* Load Quiz Attempts */
+async function loadQuizAttempts(){
+    const res = await fetch("http://localhost:5000/admin/all-quiz-attempts");
+    const data = await res.json();
+    
+    const attempts = data.attempts || [];
+    
+    let html = `
+        <h2>📊 Student Quiz Attempts</h2>
+        <table style="width: 100%; border-collapse: collapse; text-align: left; margin-top: 20px;">
+            <tr style="background: #667eea; color: white;">
+                <th style="padding: 12px; border: 1px solid #ddd;">Student Name</th>
+                <th style="padding: 12px; border: 1px solid #ddd;">Email</th>
+                <th style="padding: 12px; border: 1px solid #ddd;">Quiz</th>
+                <th style="padding: 12px; border: 1px solid #ddd;">Score</th>
+                <th style="padding: 12px; border: 1px solid #ddd;">Percentage</th>
+                <th style="padding: 12px; border: 1px solid #ddd;">Date</th>
+            </tr>
+    `;
+    
+    if (attempts.length === 0) {
+        html += `<tr><td colspan="6" style="padding: 20px; text-align: center;">No quiz attempts yet</td></tr>`;
+    } else {
+        attempts.forEach(attempt => {
+            const quizTitle = attempt.quizId?.title || 'N/A';
+            const studentName = attempt.studentId?.name || 'Unknown';
+            const studentEmail = attempt.studentId?.email || 'N/A';
+            const date = new Date(attempt.createdAt).toLocaleDateString();
+            const percentage = Math.round(attempt.percentage || 0);
+            const statusColor = percentage >= 50 ? '#4caf50' : '#f44336';
+            
+            html += `
+                <tr style="border: 1px solid #ddd;">
+                    <td style="padding: 12px; border: 1px solid #ddd;">${studentName}</td>
+                    <td style="padding: 12px; border: 1px solid #ddd;">${studentEmail}</td>
+                    <td style="padding: 12px; border: 1px solid #ddd;">${quizTitle}</td>
+                    <td style="padding: 12px; border: 1px solid #ddd;">${attempt.totalScore}</td>
+                    <td style="padding: 12px; border: 1px solid #ddd; color: ${statusColor}; font-weight: bold;">${percentage}%</td>
+                    <td style="padding: 12px; border: 1px solid #ddd;">${date}</td>
+                </tr>
+            `;
+        });
+    }
+    
+    html += '</table>';
+    document.getElementById("content").innerHTML = html;
 }
 
 loadDashboard();
