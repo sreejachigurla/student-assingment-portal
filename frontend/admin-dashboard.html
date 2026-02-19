@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Admin Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #141e30, #243b55);
+    height: 100vh;
+    overflow: hidden;
+    color: white;
+}
+
+.container {
+    display: flex;
+    height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 260px;
+    padding: 20px;
+    backdrop-filter: blur(20px);
+    background: rgba(255,255,255,0.08);
+    border-right: 1px solid rgba(255,255,255,0.2);
+}
+
+.sidebar h2 {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.sidebar button {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    background: rgba(255,255,255,0.15);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.sidebar button:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+/* Main */
+.main {
+    flex: 1;
+    padding: 30px;
+    overflow-y: auto;
+}
+
+/* Header */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logout-btn {
+    padding: 10px 20px;
+    background: #ff4b5c;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+}
+
+/* Glass Card */
+.card {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(15px);
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 12px;
+    transition: 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.stats {
+    display: flex;
+    gap: 20px;
+}
+
+.stat-box {
+    flex: 1;
+    padding: 20px;
+    text-align: center;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(15px);
+}
+
+table {
+    width: 100%;
+    margin-top: 20px;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+}
+
+th {
+    background: rgba(255,255,255,0.2);
+}
+
+tr:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.delete-btn {
+    background: #ff4b5c;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+}
+
+.search-box {
+    margin-top: 15px;
+    padding: 10px;
+    width: 300px;
+    border-radius: 6px;
+    border: none;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="sidebar">
+        <h2>Admin Panel</h2>
+        <button onclick="loadDashboard()">Dashboard</button>
+        <button onclick="loadStudents()">Manage Students</button>
+        <button onclick="loadFaculty()">Manage Faculty</button>
+        <button onclick="loadCreateQuiz()">🧪 Create Quiz</button>
+        <button onclick="logout()">Logout</button>
+    </div>
+
+    <div class="main">
+        <div class="header">
+            <h1>Welcome Admin</h1>
+        </div>
+
+        <div id="content"></div>
+    </div>
+
+</div>
+
+<script>
+
+function logout(){
+    localStorage.clear();
+    window.location.href = "admin-login.html";
+}
+
+/* Dashboard Stats */
+async function loadDashboard(){
+    const studentRes = await fetch("http://localhost:5000/admin/students");
+    const students = await studentRes.json();
+
+    const facultyRes = await fetch("http://localhost:5000/admin/faculty");
+    const faculty = await facultyRes.json();
+
+    document.getElementById("content").innerHTML = `
+        <div class="stats">
+            <div class="stat-box">
+                <h2>${students.length}</h2>
+                <p>Total Students</p>
+            </div>
+            <div class="stat-box">
+                <h2>${faculty.length}</h2>
+                <p>Total Faculty</p>
+            </div>
+        </div>
+    `;
+}
+
+/* Load Students */
+async function loadStudents(){
+    const res = await fetch("http://localhost:5000/admin/students");
+    const students = await res.json();
+
+    let html = `
+        <h2>Manage Students</h2>
+        <input class="search-box" placeholder="Search by email..." onkeyup="filterTable(this)">
+        <table>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Action</th>
+        </tr>
+    `;
+
+    students.forEach(s=>{
+        html += `
+            <tr>
+                <td>${s.name}</td>
+                <td>${s.email}</td>
+                <td>
+                    <button class="delete-btn" onclick="deleteStudent('${s._id}')">Delete</button>
+                </td>
+            </tr>
+        `;
+    });
+
+    html += "</table>";
+    document.getElementById("content").innerHTML = html;
+}
+
+/* Load Faculty */
+async function loadFaculty(){
+    const res = await fetch("http://localhost:5000/admin/faculty");
+    const faculty = await res.json();
+
+    let html = `
+        <h2>Manage Faculty</h2>
+        <table>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Department</th>
+            <th>Action</th>
+        </tr>
+    `;
+
+    faculty.forEach(f=>{
+        html += `
+            <tr>
+                <td>${f.name}</td>
+                <td>${f.email}</td>
+                <td>${f.department}</td>
+                <td>
+                    <button class="delete-btn" onclick="deleteFaculty('${f._id}')">Delete</button>
+                </td>
+            </tr>
+        `;
+    });
+
+    html += "</table>";
+    document.getElementById("content").innerHTML = html;
+}
+
+async function deleteStudent(id){
+    await fetch(`http://localhost:5000/admin/student/${id}`,{
+        method:"DELETE"
+    });
+    loadStudents();
+}
+
+async function deleteFaculty(id){
+    await fetch(`http://localhost:5000/admin/faculty/${id}`,{
+        method:"DELETE"
+    });
+    loadFaculty();
+}
+
+/* Search Filter */
+function filterTable(input){
+    const filter = input.value.toLowerCase();
+    const rows = document.querySelectorAll("table tr");
+
+    rows.forEach((row, index)=>{
+        if(index === 0) return;
+        const email = row.children[1].innerText.toLowerCase();
+        row.style.display = email.includes(filter) ? "" : "none";
+    });
+}
+
+/* ===== QUIZ CREATION ===== */
+let questionsArray = [];
+
+function loadCreateQuiz() {
+    let html = `
+        <div class="quiz-creation">
+            <h2>🧪 Create New Quiz</h2>
+            
+            <div class="form-group">
+                <label>Quiz Title:</label>
+                <input type="text" id="quizTitle" placeholder="Enter quiz title">
+            </div>
+
+            <div class="form-group">
+                <label>Quiz Description:</label>
+                <textarea id="quizDescription" placeholder="Enter quiz description"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Time Limit (minutes):</label>
+                <input type="number" id="timeLimit" placeholder="e.g., 30" min="1">
+            </div>
+
+            <hr style="margin: 20px 0; opacity: 0.3;">
+
+            <h3>📋 Questions</h3>
+            <div id="questionsContainer"></div>
+
+            <button style="background: #4CAF50; padding: 10px 20px; border: none; border-radius: 6px; color: white; cursor: pointer; margin-top: 15px;" onclick="addQuestion()">+ Add Question</button>
+
+            <div style="margin-top: 30px; display: flex; gap: 10px;">
+                <button style="background: #2196F3; padding: 12px 30px; border: none; border-radius: 6px; color: white; cursor: pointer; font-size: 16px;" onclick="createQuiz()">✅ Create Quiz</button>
+                <button style="background: #666; padding: 12px 30px; border: none; border-radius: 6px; color: white; cursor: pointer; font-size: 16px;" onclick="loadDashboard()">Cancel</button>
+            </div>
+
+            <div id="quizMessage" style="margin-top: 15px;"></div>
+        </div>
+
+        <style>
+            .quiz-creation {
+                background: rgba(255,255,255,0.08);
+                padding: 30px;
+                border-radius: 12px;
+                backdrop-filter: blur(15px);
+            }
+
+            .form-group {
+                margin-bottom: 20px;
+            }
+
+            .form-group label {
+                display: block;
+                margin-bottom: 8px;
+                font-weight: bold;
+            }
+
+            .form-group input,
+            .form-group textarea {
+                width: 100%;
+                padding: 10px;
+                border: 1px solid rgba(255,255,255,0.3);
+                border-radius: 6px;
+                background: rgba(255,255,255,0.1);
+                color: white;
+                font-size: 14px;
+                box-sizing: border-box;
+            }
+
+            .form-group textarea {
+                resize: vertical;
+                min-height: 80px;
+            }
+
+            .form-group input::placeholder,
+            .form-group textarea::placeholder {
+                color: rgba(255,255,255,0.6);
+            }
+
+            .question-block {
+                background: rgba(255,255,255,0.06);
+                padding: 20px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+                border: 1px solid rgba(255,255,255,0.1);
+            }
+
+            .question-block h4 {
+                margin-top: 0;
+                color: #4CAF50;
+            }
+
+            .question-block input,
+            .question-block textarea {
+                width: 100%;
+                padding: 8px;
+                margin-bottom: 10px;
+                border: 1px solid rgba(255,255,255,0.2);
+                border-radius: 4px;
+                background: rgba(255,255,255,0.08);
+                color: white;
+                font-size: 13px;
+                box-sizing: border-box;
+            }
+
+            .options-container {
+                background: rgba(255,255,255,0.04);
+                padding: 15px;
+                border-radius: 6px;
+                margin: 10px 0;
+            }
+
+            .option-input {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 10px;
+                align-items: center;
+            }
+
+            .option-input input {
+                flex: 1;
+                margin: 0;
+            }
+
+            .option-input input[type="radio"] {
+                width: 20px;
+                flex: 0;
+            }
+
+            .remove-option-btn {
+                background: #ff4b5c;
+                color: white;
+                border: none;
+                padding: 5px 10px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 12px;
+            }
+
+            .remove-question-btn {
+                background: #ff4b5c;
+                color: white;
+                border: none;
+                padding: 8px 15px;
+                border-radius: 4px;
+                cursor: pointer;
+                margin-top: 10px;
+            }
+
+            .add-option-btn {
+                background: #FF9800;
+                color: white;
+                border: none;
+                padding: 6px 12px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 12px;
+                margin-top: 10px;
+            }
+
+            #quizMessage {
+                padding: 12px;
+                border-radius: 6px;
+                font-weight: bold;
+                display: none;
+            }
+
+            #quizMessage.success {
+                background: rgba(76, 175, 80, 0.3);
+                color: #4CAF50;
+                display: block;
+            }
+
+            #quizMessage.error {
+                background: rgba(255, 75, 92, 0.3);
+                color: #ff4b5c;
+                display: block;
+            }
+        </style>
+    `;
+
+    document.getElementById("content").innerHTML = html;
+    questionsArray = [];
+    addQuestion(); // Add first question by default
+}
+
+function addQuestion() {
+    const qIndex = questionsArray.length;
+    questionsArray.push({
+        question: '',
+        options: ['', '', '', ''],
+        correctAnswer: 0,
+        points: 10
+    });
+
+    renderQuestions();
+}
+
+function removeQuestion(index) {
+    questionsArray.splice(index, 1);
+    renderQuestions();
+}
+
+function addOption(qIndex) {
+    questionsArray[qIndex].options.push('');
+    renderQuestions();
+}
+
+function removeOption(qIndex, optIndex) {
+    questionsArray[qIndex].options.splice(optIndex, 1);
+    // Update correctAnswer if needed
+    if (questionsArray[qIndex].correctAnswer >= questionsArray[qIndex].options.length) {
+        questionsArray[qIndex].correctAnswer = 0;
+    }
+    renderQuestions();
+}
+
+function renderQuestions() {
+    let html = '';
+
+    questionsArray.forEach((q, qIndex) => {
+        html += `
+            <div class="question-block">
+                <h4>Question ${qIndex + 1}</h4>
+                
+                <label>Question Text:</label>
+                <textarea placeholder="Enter question" onchange="questionsArray[${qIndex}].question = this.value">${q.question}</textarea>
+
+                <label>Points for this question:</label>
+                <input type="number" value="${q.points}" min="1" onchange="questionsArray[${qIndex}].points = parseInt(this.value)" style="width: 100px;">
+
+                <h5 style="margin-top: 15px;">Answer Options:</h5>
+                <div class="options-container">
+        `;
+
+        q.options.forEach((opt, optIndex) => {
+            html += `
+                <div class="option-input">
+                    <input type="radio" name="correct_${qIndex}" value="${optIndex}" ${q.correctAnswer === optIndex ? 'checked' : ''} onchange="questionsArray[${qIndex}].correctAnswer = ${optIndex}">
+                    <input type="text" placeholder="Option ${optIndex + 1}" value="${opt}" onchange="questionsArray[${qIndex}].options[${optIndex}] = this.value">
+                    <button class="remove-option-btn" onclick="removeOption(${qIndex}, ${optIndex})">Remove</button>
+                </div>
+            `;
+        });
+
+        html += `
+                </div>
+                <button class="add-option-btn" onclick="addOption(${qIndex})">+ Add Option</button>
+                <button class="remove-question-btn" onclick="removeQuestion(${qIndex})">🗑️ Remove Question</button>
+            </div>
+        `;
+    });
+
+    document.getElementById('questionsContainer').innerHTML = html;
+}
+
+async function createQuiz() {
+    const title = document.getElementById('quizTitle').value;
+    const description = document.getElementById('quizDescription').value;
+    const timeLimit = parseInt(document.getElementById('timeLimit').value);
+    const msgDiv = document.getElementById('quizMessage');
+
+    if (!title || !description || !timeLimit) {
+        msgDiv.className = 'error';
+        msgDiv.textContent = '❌ Please fill all fields';
+        return;
+    }
+
+    if (questionsArray.length === 0) {
+        msgDiv.className = 'error';
+        msgDiv.textContent = '❌ Please add at least one question';
+        return;
+    }
+
+    // Validate all questions have options and correct answer
+    for (let q of questionsArray) {
+        if (!q.question) {
+            msgDiv.className = 'error';
+            msgDiv.textContent = '❌ All questions must have text';
+            return;
+        }
+        if (q.options.some(opt => !opt)) {
+            msgDiv.className = 'error';
+            msgDiv.textContent = '❌ All options must have text';
+            return;
+        }
+        if (q.points <= 0) {
+            msgDiv.className = 'error';
+            msgDiv.textContent = '❌ All questions must have points > 0';
+            return;
+        }
+    }
+
+    try {
+        const res = await fetch('http://localhost:5000/admin/create-quiz', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title,
+                description,
+                timeLimit,
+                questions: questionsArray,
+                createdBy: localStorage.getItem('adminEmail') || 'admin'
+            })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            msgDiv.className = 'success';
+            msgDiv.textContent = '✅ Quiz created successfully!';
+            setTimeout(() => {
+                loadDashboard();
+            }, 1500);
+        } else {
+            msgDiv.className = 'error';
+            msgDiv.textContent = '❌ Error: ' + data.message;
+        }
+    } catch (error) {
+        msgDiv.className = 'error';
+        msgDiv.textContent = '❌ Error: ' + error.message;
+    }
+}
+
+loadDashboard();
+
+</script>
+
+</body>
+</html>

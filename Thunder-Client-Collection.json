@@ -1,0 +1,250 @@
+{
+  "clientName": "Thunder Client",
+  "dateExported": "2026-02-19T00:00:00.000Z",
+  "version": "1.1",
+  "folders": [
+    {
+      "id": "admin-folder",
+      "name": "Admin APIs",
+      "requests": [
+        {
+          "id": "admin-register",
+          "name": "Admin Registration",
+          "method": "POST",
+          "url": "{{BASE_URL}}/api/admin/register",
+          "headers": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "raw": "{\n  \"name\": \"Super Admin\",\n  \"email\": \"admin@example.com\",\n  \"password\": \"admin123\"\n}"
+          },
+          "notes": "One-time setup for admin. Change email/password as needed."
+        },
+        {
+          "id": "admin-login",
+          "name": "Admin Login",
+          "method": "POST",
+          "url": "{{BASE_URL}}/api/admin/login",
+          "headers": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"admin123\"\n}"
+          },
+          "notes": "Returns adminId. Save the adminId for reference."
+        },
+        {
+          "id": "admin-add-student",
+          "name": "Add Student (Admin)",
+          "method": "POST",
+          "url": "{{BASE_URL}}/admin/add-student",
+          "headers": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"pass123\",\n  \"department\": \"CS\"\n}"
+          },
+          "notes": "Admin adds a new student. Department can be CS, Physics, Math, etc."
+        },
+        {
+          "id": "admin-add-faculty",
+          "name": "Add Faculty (Admin)",
+          "method": "POST",
+          "url": "{{BASE_URL}}/admin/add-faculty",
+          "headers": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "raw": "{\n  \"name\": \"Dr. Smith\",\n  \"email\": \"smith@example.com\",\n  \"password\": \"pass123\",\n  \"department\": \"Physics\"\n}"
+          },
+          "notes": "Admin adds a new faculty member."
+        },
+        {
+          "id": "admin-get-students",
+          "name": "Get All Students",
+          "method": "GET",
+          "url": "{{BASE_URL}}/admin/students",
+          "headers": [],
+          "notes": "Returns list of all students (passwords excluded for security)."
+        },
+        {
+          "id": "admin-get-faculty",
+          "name": "Get All Faculty",
+          "method": "GET",
+          "url": "{{BASE_URL}}/admin/faculty",
+          "headers": [],
+          "notes": "Returns list of all faculty members (passwords excluded)."
+        }
+      ]
+    },
+    {
+      "id": "student-folder",
+      "name": "Student APIs",
+      "requests": [
+        {
+          "id": "student-register",
+          "name": "Student Registration",
+          "method": "POST",
+          "url": "{{BASE_URL}}/register",
+          "headers": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "raw": "{\n  \"name\": \"Alice Johnson\",\n  \"email\": \"alice@example.com\",\n  \"password\": \"alice123\",\n  \"department\": \"Math\"\n}"
+          },
+          "notes": "Students can self-register. Save the email for login later."
+        },
+        {
+          "id": "student-login",
+          "name": "Student Login",
+          "method": "POST",
+          "url": "{{BASE_URL}}/login",
+          "headers": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "raw": "{\n  \"email\": \"alice@example.com\",\n  \"password\": \"alice123\"\n}"
+          },
+          "notes": "Returns studentId, name, email, department. Save studentId for submissions."
+        },
+        {
+          "id": "student-submit-assignment",
+          "name": "Submit Assignment",
+          "method": "POST",
+          "url": "{{BASE_URL}}/student/submit-assignment",
+          "headers": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "raw": "{\n  \"studentId\": \"{{studentId}}\",\n  \"assignmentId\": \"{{assignmentId}}\",\n  \"content\": \"https://github.com/user/repo or submission text here\"\n}"
+          },
+          "notes": "Student submits assignment. Replace {{studentId}} and {{assignmentId}} with actual IDs from previous responses."
+        }
+      ]
+    },
+    {
+      "id": "faculty-folder",
+      "name": "Faculty APIs",
+      "requests": [
+        {
+          "id": "faculty-register",
+          "name": "Faculty Registration",
+          "method": "POST",
+          "url": "{{BASE_URL}}/api/faculty/register",
+          "headers": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "raw": "{\n  \"name\": \"Dr. Emily Carter\",\n  \"email\": \"emily@example.com\",\n  \"password\": \"faculty123\",\n  \"department\": \"Computer Science\"\n}"
+          },
+          "notes": "Faculty can self-register or be added by admin."
+        },
+        {
+          "id": "faculty-login",
+          "name": "Faculty Login",
+          "method": "POST",
+          "url": "{{BASE_URL}}/api/faculty/login",
+          "headers": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "raw": "{\n  \"email\": \"emily@example.com\",\n  \"password\": \"faculty123\"\n}"
+          },
+          "notes": "Returns facultyId, name, department. Save facultyId for managing assignments."
+        },
+        {
+          "id": "faculty-add-assignment",
+          "name": "Add Assignment",
+          "method": "POST",
+          "url": "{{BASE_URL}}/faculty/add-assignment",
+          "headers": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "raw": "{\n  \"title\": \"Advanced Algorithm Design\",\n  \"description\": \"Solve problems 1-15 from Chapter 5. Submit via GitHub.\",\n  \"deadline\": \"2026-03-15T23:59:00Z\",\n  \"createdBy\": \"Dr. Emily Carter\"\n}"
+          },
+          "notes": "Faculty creates a new assignment. Deadline in ISO 8601 format. Save assignmentId for references."
+        },
+        {
+          "id": "faculty-view-assignments",
+          "name": "View All Assignments",
+          "method": "GET",
+          "url": "{{BASE_URL}}/faculty/assignments",
+          "headers": [],
+          "notes": "Retrieves all assignments in the system. Use assignmentId from response for submissions."
+        },
+        {
+          "id": "faculty-view-submissions",
+          "name": "View Submissions (by Assignment)",
+          "method": "GET",
+          "url": "{{BASE_URL}}/faculty/submissions/{{assignmentId}}",
+          "headers": [],
+          "notes": "Replace {{assignmentId}} with actual ID. Returns all student submissions for this assignment."
+        }
+      ]
+    }
+  ],
+  "environments": [
+    {
+      "name": "Local Development",
+      "variables": [
+        {
+          "name": "BASE_URL",
+          "value": "http://localhost:5000",
+          "enabled": true
+        },
+        {
+          "name": "adminId",
+          "value": "copy_from_login_response",
+          "enabled": true
+        },
+        {
+          "name": "facultyId",
+          "value": "copy_from_login_response",
+          "enabled": true
+        },
+        {
+          "name": "studentId",
+          "value": "copy_from_login_response",
+          "enabled": true
+        },
+        {
+          "name": "assignmentId",
+          "value": "copy_from_assignment_response",
+          "enabled": true
+        }
+      ]
+    }
+  ],
+  "notes": "Complete API Testing Collection for Student Assignment System\n\n**Testing Order:**\n1. Admin Registration (one-time)\n2. Admin Login\n3. Add Faculty & Students (via Admin endpoints)\n4. Faculty Registration or Login (if self-registered)\n5. Faculty Add Assignment\n6. Student Registration\n7. Student Login\n8. Student Submit Assignment\n9. Faculty View Submissions\n\n**Variable Usage:**\n- Copy response values into Environment Variables\n- Use {{variableName}} in requests to reference them\n- Example: In Submit Assignment, use {{studentId}} and {{assignmentId}}"
+}

@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Faculty Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: white;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    display: flex;
+    gap: 20px;
+    max-width: 1400px;
+    margin: auto;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 280px;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(15px);
+    padding: 25px;
+    border-radius: 15px;
+    height: fit-content;
+    position: sticky;
+    top: 20px;
+}
+
+.sidebar h2 {
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 22px;
+}
+
+.sidebar button {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    background: rgba(255,255,255,0.15);
+    border: none;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+    font-weight: 600;
+}
+
+.sidebar button:hover,
+.sidebar button.active {
+    background: rgba(102, 126, 234, 0.5);
+    transform: translateX(5px);
+}
+
+/* Main Content */
+.main {
+    flex: 1;
+}
+
+.header {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(15px);
+    padding: 20px;
+    border-radius: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.logout-btn {
+    padding: 10px 20px;
+    background: #e74c3c;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.logout-btn:hover {
+    background: #c0392b;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.tab-btn {
+    padding: 10px 20px;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+    font-weight: 600;
+}
+
+.tab-btn.active {
+    background: #667eea;
+}
+
+/* Card */
+.card {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(15px);
+    padding: 20px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255,255,255,0.2);
+    transition: 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.card h3 {
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+/* Dashboard Grid */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.stat-box {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(15px);
+    padding: 25px;
+    border-radius: 15px;
+    text-align: center;
+    border-left: 4px solid #667eea;
+}
+
+.stat-box h4 {
+    font-size: 14px;
+    opacity: 0.9;
+    margin-bottom: 10px;
+}
+
+.stat-box .number {
+    font-size: 32px;
+    font-weight: bold;
+    color: #7c3aed;
+}
+
+.stat-box .percentage {
+    font-size: 12px;
+    opacity: 0.8;
+    margin-top: 5px;
+}
+
+/* Form */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.2);
+    color: white;
+    font-family: inherit;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+    color: rgba(255,255,255,0.6);
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    background: rgba(255,255,255,0.3);
+}
+
+/* Buttons */
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.3s;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+    background: #2ecc71;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #27ae60;
+}
+
+.btn-danger {
+    background: #e74c3c;
+    color: white;
+}
+
+/* Table */
+.table-container {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(15px);
+    border-radius: 15px;
+    overflow-x: auto;
+    margin-top: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    background: rgba(255,255,255,0.15);
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+td {
+    padding: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+tr:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-submitted {
+    background: rgba(46, 204, 113, 0.3);
+    color: #2ecc71;
+}
+
+.status-pending {
+    background: rgba(243, 156, 18, 0.3);
+    color: #f39c12;
+}
+
+/* Charts */
+.chart-container {
+    position: relative;
+    height: 300px;
+    margin-top: 20px;
+}
+
+/* Hidden Tab Content */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Message */
+.message {
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+.message.success {
+    background: rgba(46, 204, 113, 0.3);
+    color: #2ecc71;
+    border: 1px solid #2ecc71;
+}
+
+.message.error {
+    background: rgba(231, 76, 60, 0.3);
+    color: #e74c3c;
+    border: 1px solid #e74c3c;
+}
+
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h2>📊 Faculty Panel</h2>
+        <button class="nav-btn active" onclick="showTab('dashboard')">Dashboard</button>
+        <button class="nav-btn" onclick="showTab('create')">Create Assignment</button>
+        <button class="nav-btn" onclick="showTab('assignments')">View Assignments</button>
+        <button class="nav-btn" onclick="showTab('analytics')">Analytics</button>
+        <button class="nav-btn" onclick="showTab('reminders')">Send Reminders</button>
+        <button class="logout-btn" onclick="logout()" style="margin-top: 30px;">Logout</button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main">
+
+        <!-- Header -->
+        <div class="header">
+            <div>
+                <h1 id="welcomeText"></h1>
+                <p id="departmentText"></p>
+            </div>
+        </div>
+
+        <!-- 1. DASHBOARD TAB -->
+        <div id="dashboard" class="tab-content active">
+            <div class="dashboard-grid" id="statsGrid"></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="card">
+                    <h3>📊 Submission Rate</h3>
+                    <div class="chart-container">
+                        <canvas id="submissionChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>📈 Assignment Status</h3>
+                    <div class="chart-container">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. CREATE ASSIGNMENT TAB -->
+        <div id="create" class="tab-content">
+            <div class="card">
+                <h3>➕ Create New Assignment</h3>
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" id="assignTitle" placeholder="Assignment Title">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="assignDesc" placeholder="Assignment Description" rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Deadline</label>
+                    <input type="datetime-local" id="assignDeadline">
+                </div>
+                <button class="btn btn-primary" onclick="createAssignment()">Create Assignment</button>
+                <div id="createMsg"></div>
+            </div>
+        </div>
+
+        <!-- 3. ASSIGNMENTS TAB -->
+        <div id="assignments" class="tab-content">
+            <div id="assignmentsList"></div>
+        </div>
+
+        <!-- 4. ANALYTICS TAB -->
+        <div id="analytics" class="tab-content">
+            <div class="card">
+                <h3>📈 Select Assignment for Analytics</h3>
+                <div class="form-group">
+                    <label>Choose Assignment</label>
+                    <select id="analyticsSelect" onchange="loadAssignmentAnalytics()">
+                        <option value="">-- Select Assignment --</option>
+                    </select>
+                </div>
+                <div id="analyticsContent"></div>
+            </div>
+        </div>
+
+        <!-- 5. REMINDERS TAB -->
+        <div id="reminders" class="tab-content">
+            <div class="card">
+                <h3>📧 Send Assignment Reminders</h3>
+                <p style="margin-bottom: 20px; opacity: 0.9;">Send reminder emails to students about assignments due in 2 days</p>
+                <button class="btn btn-secondary" onclick="sendReminders()">📤 Send Reminders Now</button>
+                <div id="remindersMsg"></div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+// Check login
+const faculty = JSON.parse(localStorage.getItem("faculty"));
+
+if (!faculty) {
+    window.location.href = "faculty-login.html";
+}
+
+// Display faculty info
+document.getElementById("welcomeText").innerText = "Welcome, " + faculty.name + " 👋";
+document.getElementById("departmentText").innerText = "📚 " + faculty.department;
+
+// ===== TAB NAVIGATION =====
+function showTab(tabName) {
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    document.getElementById(tabName).classList.add('active');
+
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+
+    if (tabName === 'dashboard') loadDashboard();
+    else if (tabName === 'assignments') loadAssignments();
+    else if (tabName === 'analytics') populateAnalyticsSelect();
+}
+
+// ===== LOAD DASHBOARD =====
+async function loadDashboard() {
+    try {
+        const res = await fetch("http://localhost:5000/faculty/assignments");
+        const assignments = await res.json();
+
+        let totalAssignments = assignments.length;
+        let submissionStats = [];
+
+        for (const assign of assignments) {
+            const statsRes = await fetch(`http://localhost:5000/faculty/assignment-stats/${assign._id}`);
+            const stats = await statsRes.json();
+            submissionStats.push(stats);
+        }
+
+        // Calculate totals
+        let totalSubmissions = submissionStats.reduce((sum, s) => sum + s.totalSubmissions, 0);
+        let totalStudents = submissionStats.length > 0 ? submissionStats[0].totalStudents : 0;
+
+        // Display stats
+        document.getElementById('statsGrid').innerHTML = `
+            <div class="stat-box">
+                <h4>📝 Total Assignments</h4>
+                <div class="number">${totalAssignments}</div>
+            </div>
+            <div class="stat-box">
+                <h4>📤 Total Submissions</h4>
+                <div class="number">${totalSubmissions}</div>
+            </div>
+            <div class="stat-box">
+                <h4>👥 Total Students</h4>
+                <div class="number">${totalStudents}</div>
+            </div>
+            <div class="stat-box">
+                <h4>📊 Avg Submission Rate</h4>
+                <div class="number">${(submissionStats.length > 0 ? (submissionStats.reduce((sum, s) => sum + parseFloat(s.submissionPercentage), 0) / submissionStats.length).toFixed(1) : 0)}%</div>
+            </div>
+        `;
+
+        // Draw charts
+        if (submissionStats.length > 0) drawCharts(submissionStats);
+
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+// ===== DRAW CHARTS =====
+function drawCharts(stats) {
+    // Submission Rate Chart
+    const ctx1 = document.getElementById('submissionChart').getContext('2d');
+    new Chart(ctx1, {
+        type: 'doughnut',
+        data: {
+            labels: ['Submitted', 'Pending'],
+            datasets: [{
+                data: [
+                    stats.reduce((sum, s) => sum + s.totalSubmissions, 0),
+                    stats.reduce((sum, s) => sum + s.notSubmitted, 0)
+                ],
+                backgroundColor: ['#2ecc71', '#f39c12']
+            }]
+        }
+    });
+
+    // Status Chart
+    const ctx2 = document.getElementById('statusChart').getContext('2d');
+    new Chart(ctx2, {
+        type: 'bar',
+        data: {
+            labels: stats.map((_, i) => 'Assignment ' + (i + 1)),
+            datasets: [{
+                label: 'Submitted',
+                data: stats.map(s => s.totalSubmissions),
+                backgroundColor: '#2ecc71'
+            }, {
+                label: 'Pending',
+                data: stats.map(s => s.notSubmitted),
+                backgroundColor: '#f39c12'
+            }]
+        }
+    });
+}
+
+// ===== CREATE ASSIGNMENT =====
+async function createAssignment() {
+    const title = document.getElementById('assignTitle').value;
+    const description = document.getElementById('assignDesc').value;
+    const deadline = document.getElementById('assignDeadline').value;
+
+    if (!title || !description || !deadline) {
+        alert('Please fill all fields');
+        return;
+    }
+
+    try {
+        const res = await fetch("http://localhost:5000/faculty/add-assignment", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                title,
+                description,
+                deadline,
+                createdBy: faculty.name
+            })
+        });
+
+        const data = await res.json();
+        const msgDiv = document.getElementById('createMsg');
+        msgDiv.className = 'message success';
+        msgDiv.innerText = '✅ ' + data.message;
+
+        document.getElementById('assignTitle').value = '';
+        document.getElementById('assignDesc').value = '';
+        document.getElementById('assignDeadline').value = '';
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+// ===== LOAD ASSIGNMENTS =====
+async function loadAssignments() {
+    try {
+        const res = await fetch("http://localhost:5000/faculty/assignments");
+        const assignments = await res.json();
+
+        let html = '';
+
+        for (const assign of assignments) {
+            const statsRes = await fetch(`http://localhost:5000/faculty/assignment-stats/${assign._id}`);
+            const stats = await statsRes.json();
+
+            html += `
+                <div class="card">
+                    <h3>📋 ${assign.title}</h3>
+                    <p>${assign.description}</p>
+                    <p><strong>Deadline:</strong> ${new Date(assign.deadline).toLocaleString()}</p>
+                    <div style="margin-top: 15px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                        <h4>📊 Submission Summary</h4>
+                        <p><strong>Submitted:</strong> <span style="color: #2ecc71;">${stats.totalSubmissions}</span> / ${stats.totalStudents}</p>
+                        <p><strong>Not Submitted:</strong> <span style="color: #f39c12;">${stats.notSubmitted}</span></p>
+                        <p><strong>Submission Rate:</strong> <span style="color: #667eea;">${stats.submissionPercentage}%</span></p>
+                    </div>
+                    <button class="btn btn-primary" style="margin-top: 15px; width: 100%;" onclick="viewSubmissionDetails('${assign._id}')">View Submissions</button>
+                </div>
+            `;
+        }
+
+        document.getElementById('assignmentsList').innerHTML = html;
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+// ===== POPULATE ANALYTICS SELECT =====
+async function populateAnalyticsSelect() {
+    try {
+        const res = await fetch("http://localhost:5000/faculty/assignments");
+        const assignments = await res.json();
+
+        const select = document.getElementById('analyticsSelect');
+        select.innerHTML = '<option value="">-- Select Assignment --</option>';
+
+        assignments.forEach(assign => {
+            const option = document.createElement('option');
+            option.value = assign._id;
+            option.text = assign.title;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+// ===== LOAD ASSIGNMENT ANALYTICS =====
+async function loadAssignmentAnalytics() {
+    const assignmentId = document.getElementById('analyticsSelect').value;
+
+    if (!assignmentId) return;
+
+    try {
+        const res = await fetch(`http://localhost:5000/faculty/assignment-stats/${assignmentId}`);
+        const stats = await res.json();
+
+        let html = `
+            <div style="margin-top: 20px;">
+                <h4>Assignment: ${stats.assignmentTitle}</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                    <div class="stat-box">
+                        <h4>✅ Submitted</h4>
+                        <div class="number">${stats.totalSubmissions}</div>
+                    </div>
+                    <div class="stat-box">
+                        <h4>⏳ Not Submitted</h4>
+                        <div class="number">${stats.notSubmitted}</div>
+                    </div>
+                </div>
+                <h4 style="margin-top: 20px;">Submitted By:</h4>
+                <div class="table-container">
+                    <table>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Department</th>
+                            <th>Status</th>
+                        </tr>
+        `;
+
+        stats.submissions.forEach(sub => {
+            html += `
+                <tr>
+                    <td>${sub.studentId?.name}</td>
+                    <td>${sub.studentId?.email}</td>
+                    <td>${sub.studentId?.department}</td>
+                    <td><span class="status-badge status-submitted">✅ Submitted</span></td>
+                </tr>
+            `;
+        });
+
+        html += `</table></div><h4 style="margin-top: 20px;">Not Submitted By:</h4><div class="table-container"><table><tr><th>Name</th><th>Email</th><th>Department</th><th>Status</th></tr>`;
+
+        stats.notSubmittedList.forEach(student => {
+            html += `
+                <tr>
+                    <td>${student.name}</td>
+                    <td>${student.email}</td>
+                    <td>${student.department}</td>
+                    <td><span class="status-badge status-pending">⏳ Pending</span></td>
+                </tr>
+            `;
+        });
+
+        html += `</table></div></div>`;
+
+        document.getElementById('analyticsContent').innerHTML = html;
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+// ===== VIEW SUBMISSION DETAILS =====
+function viewSubmissionDetails(assignmentId) {
+    document.getElementById('analyticsSelect').value = assignmentId;
+    loadAssignmentAnalytics();
+    showTab('analytics');
+}
+
+// ===== SEND REMINDERS =====
+async function sendReminders() {
+    try {
+        const res = await fetch("http://localhost:5000/admin/send-reminders", {
+            method: "POST"
+        });
+
+        const data = await res.json();
+        const msgDiv = document.getElementById('remindersMsg');
+
+        if (res.ok) {
+            msgDiv.className = 'message success';
+            msgDiv.innerText = '✅ ' + data.message;
+        } else {
+            msgDiv.className = 'message error';
+            msgDiv.innerText = '❌ Error: ' + data.message;
+        }
+    } catch (error) {
+        console.error(error);
+        const msgDiv = document.getElementById('remindersMsg');
+        msgDiv.className = 'message error';
+        msgDiv.innerText = '❌ Error sending reminders';
+    }
+}
+
+// ===== LOGOUT =====
+function logout() {
+    localStorage.removeItem("faculty");
+    window.location.href = "faculty-login.html";
+}
+
+// Load dashboard on startup
+loadDashboard();
+
+</script>
+
+</body>
+</html>
