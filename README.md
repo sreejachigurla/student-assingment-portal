@@ -43,6 +43,15 @@ student-assignment/
 
 Install dependencies
 npm install
+
+
+##Start server
+
+node server.js
+
+
+FINAL OUTPUT:--
+
 <img width="1920" height="1020" alt="Screenshot 2026-02-19 181146" src="https://github.com/user-attachments/assets/4a63ba7d-6450-4682-b87a-d10e151e5873" />
 
 <img width="1920" height="1020" alt="Screenshot 2026-02-19 181201" src="https://github.com/user-attachments/assets/a7653965-5ff9-43f4-89cf-c32677f07899" />
@@ -84,12 +93,6 @@ npm install
 
 <img width="1920" height="1020" alt="Screenshot 2026-02-19 181725" src="https://github.com/user-attachments/assets/61cd0215-5408-4f97-9006-008b40246959" />
 
-
-##Start server
-
-node server.js
-
-FINAL OUTPUT:--
 
 
 ---
