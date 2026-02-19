@@ -87,13 +87,14 @@ FINAL OUTPUT:--
 
 
 #DATABASE--MongoDB
-<img width="1920" height="1020" alt="Screenshot 2026-02-19 181736" src="https://github.com/user-attachments/assets/477f4d56-af7a-4703-816a-81a7fa6adc6b" />
 
-<img width="1920" height="1020" alt="Screenshot 2026-02-19 181625" src="https://github.com/user-attachments/assets/5dbeea34-dea7-4f73-912d-e72e5d9ceaa6" />
+<img width="1920" height="1020" alt="Screenshot 2026-02-19 181736" src="https://github.com/user-attachments/assets/62d11001-ce05-47f6-a861-6a61da8a1b93" />
 
-<img width="1920" height="1020" alt="Screenshot 2026-02-19 181707" src="https://github.com/user-attachments/assets/fdd338b6-75ab-48bb-b335-ece7b5d74099" />
+<img width="1920" height="1020" alt="Screenshot 2026-02-19 181625" src="https://github.com/user-attachments/assets/16819c3d-9fac-4dc9-8499-2325a75fc417" />
 
-<img width="1920" height="1020" alt="Screenshot 2026-02-19 181725" src="https://github.com/user-attachments/assets/61cd0215-5408-4f97-9006-008b40246959" />
+<img width="1920" height="1020" alt="Screenshot 2026-02-19 181707" src="https://github.com/user-attachments/assets/051d9c7b-c004-49ae-95b9-dd6b33456ef7" />
+
+![Uploading Screenshot 2026-02-19 181725.png…]()
 
 
 
