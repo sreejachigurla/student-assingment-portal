@@ -94,7 +94,8 @@ FINAL OUTPUT:--
 
 <img width="1920" height="1020" alt="Screenshot 2026-02-19 181707" src="https://github.com/user-attachments/assets/051d9c7b-c004-49ae-95b9-dd6b33456ef7" />
 
-![Uploading Screenshot 2026-02-19 181725.png…]()
+<img width="1920" height="1020" alt="Screenshot 2026-02-19 181725" src="https://github.com/user-attachments/assets/6a2d80b5-d5a7-4ae3-a4de-3ebb1453dacb" />
+
 
 
 
